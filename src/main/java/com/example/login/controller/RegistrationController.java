@@ -1,52 +1,33 @@
 package com.example.login.controller;
 
-
-import com.example.login.model.User;
-import com.example.login.repository.UserRepository;
-import com.example.login.service.CustomUserDetailsService;
+import com.example.login.requests.AuthenticationResponse;
+import com.example.login.requests.RegisterRequests;
+import com.example.login.service.AuthenticationService;
 import com.example.login.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class RegistrationController {
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
+    private AuthenticationService authenticationService;
     @Autowired
     private EmailService emailService;
 
-    @Autowired
-    private CustomUserDetailsService customUserDetailsService;
-
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
-        // Check if user already exists
-        if (userRepository.findByUsername(user.getUserName()) != null) {
-            return ResponseEntity.badRequest().body("User with username already exists.");
+    public ResponseEntity<?> registerUser(@RequestBody RegisterRequests registerRequest) {
+        try {
+            // The register method returns an AuthenticationResponse object
+            AuthenticationResponse authResponse = authenticationService.register(registerRequest);
+
+            // Assuming your email service has a method to send a registration confirmation
+            emailService.sendRegistrationConfirmation(registerRequest.getEmail(), authResponse.getJwtToken());
+
+            return ResponseEntity.ok("User registered successfully. Please check your email to confirm your account. Verify your email address: " );
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-
-        User savedUser = customUserDetailsService.save(user);
-
-
-        String subject = "Welcome to Our App!";
-        String text = "Hi " + user.getUserName() + ",\n\nWelcome to Ella's Login System. We are glad you joined us!";
-        emailService.sendMail(user.getEmail(), subject, text);
-
-
-        return ResponseEntity.ok("User registered successfully!");
     }
 }
-

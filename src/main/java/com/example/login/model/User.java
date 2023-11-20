@@ -1,57 +1,74 @@
 package com.example.login.model;
 
 import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
+import java.util.Collections;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
 @Entity
 @Table(name = "users")
-public class User {
+public class User implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long userId;
+
     @Column(nullable = false, unique = true)
-    private String userName;
+    private String username;
+
+    // Assuming you are injecting this value from your application.properties or any other config
     @Column(nullable = false, unique = true)
     private String email;
-    @Column(nullable = false, unique = true)
+
+    @Column(nullable = false)
     private String password;
 
-    public Long getId() {
-        return id;
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // This will return a single authority/role for the user
+        return Collections.singleton(new SimpleGrantedAuthority(role.name()));
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
+    @Override
     public String getPassword() {
         return password;
     }
 
-    public User(Long id, String userName, String email, String password) {
-        this.id = id;
-        this.userName = userName;
-        this.email = email;
-        this.password = password;
+    @Override
+    public boolean isAccountNonExpired() {
+
+        return true;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    @Override
+    public boolean isAccountNonLocked() {
+        // You can add your logic here, currently it returns true for all users
+        return true;
     }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+
+        return true;
+    }
+
+
 }
